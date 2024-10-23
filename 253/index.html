@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Whale</title> <!-- 修改页面标题为 AI Whale -->
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            position: relative;
+            cursor: url('C:/Users/Administrator/Desktop/253/微信图片_20241023021039.png'), auto; /* 使用新图片作为自定义鼠标样式 */
+        }
+        #bgVideo {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -1;
+            background-size: cover;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            z-index: 1;
+            animation: scale-up 5s forwards; /* 添加由小到大的动画 */
+        }
+        .enter-image {
+            width: 74px; /* 设置最终宽度 */
+            height: 74px; /* 设置最终高度 */
+            border-radius: 50%; /* 使图片变成圆形 */
+            object-fit: cover; /* 确保图片适应容器 */
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5), 0 0 30px rgba(0, 255, 255, 0.3);
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            animation: scale-up 5s forwards; /* 添加由小到大的动画 */
+        }
+        .enter-image:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.7), 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+        .arrow {
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 20px solid rgba(0, 255, 255, 0.7); /* 改为向上的箭头 */
+            margin-bottom: 10px; /* 调整箭头和头像之间的距离 */
+            animation: arrow-bounce 2s infinite, scale-up 5s forwards; /* 添加由小到大的动画 */
+        }
+        @keyframes arrow-bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        @keyframes scale-up {
+            0% {
+                transform: scale(0);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        /* 添加音乐控制按钮样式 */
+        #musicToggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(100, 255, 218, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <video autoplay muted loop id="bgVideo">
+        <source src="C:/Users/Administrator/Desktop/253/images/WeChat_20241021215538.mp4" type="video/mp4">
+        您的浏览器不支持 HTML5 视频。
+    </video>
+    <div class="container">
+        <div class="arrow"></div>
+        <img src="C:/Users/Administrator/Desktop/253/images/photo_2024-10-20_21-10-50.jpg" alt="进入网页" class="enter-image" onclick="location.href='main.html'">
+    </div>
+    <!-- 添加音乐控制按钮 -->
+    <button id="musicToggle" onclick="toggleBackgroundMusic()">🔇</button>
+
+    <!-- 添加音频元素 -->
+    <audio id="backgroundMusic" loop>
+        <source src="C:\Users\Administrator\Desktop\253\images\剪辑20241021_2325.MP3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <script>
+        // 保留原有脚本
+
+        // 添加背景音乐控制功能
+        let backgroundMusicPlaying = false;
+
+        function toggleBackgroundMusic() {
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            const musicToggle = document.getElementById('musicToggle');
+            if (backgroundMusicPlaying) {
+                backgroundMusic.pause();
+                musicToggle.textContent = '🔇';
+                backgroundMusicPlaying = false;
+            } else {
+                backgroundMusic.play().then(() => {
+                    musicToggle.textContent = '🔊';
+                    backgroundMusicPlaying = true;
+                }).catch(error => {
+                    console.error('Error playing background music:', error);
+                });
+            }
+        }
+
+        function tryPlayBackgroundMusic() {
+            if (!backgroundMusicPlaying) {
+                toggleBackgroundMusic();
+            }
+            document.removeEventListener('click', tryPlayBackgroundMusic);
+        }
+
+        document.addEventListener('click', tryPlayBackgroundMusic);
+
+        // 如果需要在页面加载时自动播放音乐（可能会被浏览器阻止）
+        // window.addEventListener('load', tryPlayBackgroundMusic);
+    </script>
+</body>
+</html>

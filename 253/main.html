@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Whale</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            color: #e0f7fa;
+            overflow: hidden; /* 止滚动条出现 */
+        }
+        #background-video {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -1;
+            transform: translateX(-50%) translateY(-50%);
+            object-fit: cover;
+        }
+        .container {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: rgba(10, 25, 47, 0.5); /* 半透明背景 */
+        }
+        .whale-image-container {
+            position: relative;
+            display: inline-block;
+        }
+        .whale-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+        .whale-image:hover {
+            transform: scale(1.05);
+        }
+        .whale-image-glow {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border-radius: 50%;
+            background-color: rgba(100, 255, 218, 0.3); /* 使用与标题相同的颜色，但透明度降低 */
+            filter: blur(10px);
+            z-index: 1;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+        }
+        h1 {
+            font-size: 3em;
+            margin: 20px 0;
+            color: #64ffda;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 500px;
+            background-image: url('C:/Users/Administrator/Desktop/253/images/20b74dfc33ed147408621389440b36c.png');
+            background-size: cover;
+            background-position: center;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            overflow: hidden;
+            z-index: 1000;
+        }
+        .modal-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: rgba(10, 25, 47, 0.7);
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #fff;
+            font-size: 24px;
+            background-color: rgba(0, 0, 0, 0.3);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        #chatContent {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            margin-bottom: 50px;
+        }
+        .chat-input {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            padding: 5px;
+            background-color: rgba(100, 255, 218, 0.1);
+            border-radius: 20px;
+        }
+        .chat-input input {
+            width: calc(100% - 50px);
+            padding: 8px 12px;
+            border: none;
+            border-radius: 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        .chat-input button {
+            width: 40px;
+            margin-left: 5px;
+            border: none;
+            border-radius: 15px;
+            background-color: #64ffda;
+            color: #0a192f;
+            cursor: pointer;
+        }
+        .showcase-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 60px 40px;
+        }
+        .horizontal-window {
+            width: 80%; /* 将宽度从100%减小到80% */
+            max-width: 1000px; /* 添加最大宽度限制 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 40px; /* 居中显示 */
+            background-color: rgba(10, 25, 47, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            overflow: hidden;
+            border: 1px solid #64ffda;
+            padding: 15px; /* 减小内边距 */
+        }
+        .horizontal-window .description {
+            text-align: center;
+            padding: 0 15px; /* 添加左右内边距 */
+        }
+        .horizontal-window h3 {
+            font-size: 2em; /* 稍微减小标题字体大小 */
+            color: #64ffda;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .horizontal-window p {
+            font-size: 1em; /* 稍微减小段落字体大小 */
+            color: #bde0fe;
+            line-height: 1.6;
+        }
+        .showcase-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        .showcase-window {
+            width: calc(33.33% - 30px);
+            margin: 15px;
+            background-color: rgba(10, 25, 47, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #64ffda;
+        }
+        .showcase-window img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .showcase-window .description {
+            padding: 25px;
+            flex-grow: 1;
+        }
+        .showcase-window h3 {
+            font-size: 1.6em;
+            color: #64ffda;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+            border-bottom: 2px solid #64ffda;
+            padding-bottom: 10px;
+        }
+        .showcase-window p {
+            font-size: 1em;
+            color: #bde0fe;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        .section-divider {
+            width: 100%;
+            height: 2px;
+            background-color: #64ffda;
+            margin: 40px 0;
+        }
+        /* 在现有样式的基础上添加或修改 */
+        .message {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .message-avatar {
+            width: 30px;  /* 减小头像尺寸 */
+            height: 30px; /* 减小头像尺寸 */
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .message-content {
+            flex: 1;
+            padding: 8px 12px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+        }
+        
+        .user-message .message-content {
+            background-color: rgba(100, 255, 218, 0.2);
+        }
+        
+        .ai-message {
+            justify-content: flex-start;
+        }
+        .ai-whale-video {
+            max-width: 50%; /* 限制视频最大宽度 */
+            height: auto;
+            border-radius: 10px; /* 添加圆角 */
+        }
+        /* 在现有样式的基础上添加 */
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .float-container {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* 修改现有的 .container 样式 */
+        .container {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background-color: rgba(10, 25, 47, 0.5); /* 半透明背景 */
+        }
+
+        /* 在现有式的基础上添加 */
+        .top-right-buttons {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .top-right-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(100, 255, 218, 0.2);
+            border: 2px solid #64ffda;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+            text-decoration: none;
+            color: #64ffda;
+        }
+
+        .top-right-button:hover {
+            background-color: rgba(100, 255, 218, 0.4);
+            transform: scale(1.1);
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -20px;
+            background-color: rgba(100, 255, 218, 0.3);
+            border: 1px solid rgba(100, 255, 218, 0.5);
+            border-radius: 50%;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .bubble:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes rise {
+            0% {
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                transform: translateY(-100vh) scale(0.8);
+            }
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* 在现有样式的基础上添加 */
+        body, .container, .showcase-section, .showcase-window, .top-right-button {
+            cursor: url('C:/Users/Administrator/Desktop/253/微信图片_20241023021039.png'), auto;
+        }
+
+        /* 对于可点击元素,我们可以设置一个不同的鼠标样式 */
+        .whale-image, .close, .chat-input button, .top-right-button:hover, .bubble {
+            cursor: url('C:/Users/Administrator/Desktop/253/微信图片_20241023021039.png'), pointer;
+        }
+
+        .rectangle-box {
+            width: 40%; /* 将宽度从60%减小到40% */
+            max-width: 300px; /* 减小最大宽度 */
+            height: 60px; /* 进一步减小高度 */
+            background-color: rgba(100, 255, 218, 0.1);
+            border: 2px solid #64ffda;
+            border-radius: 10px;
+            margin: 20px auto 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #64ffda;
+            font-size: 1.2em;
+            text-align: center;
+            padding: 5px; /* 减小内边距 */
+            box-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+        }
+
+        .float-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%; /* 确保容器宽度为100% */
+        }
+
+        #musicToggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(100, 255, 218, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- 在 body 标签的开始处添加以下内容 -->
+    <div class="top-right-buttons">
+        <a href="https://t.me/AiWhalepump" target="_blank" class="top-right-button">
+            ✈️
+        </a>
+        <a href="https://x.com/aiwhale9?s=21" target="_blank" class="top-right-button">
+            𝕏
+        </a>
+        <div class="top-right-button">
+            💊
+        </div>
+    </div>
+
+    <!-- 在 <body> 标签的开始处添加音乐控制按钮 -->
+    <button id="musicToggle" onclick="toggleBackgroundMusic()">🔇</button>
+
+    <video autoplay loop muted playsinline id="background-video">
+        <source src="C:\Users\Administrator\Desktop\253\1729615235217075818-video_watermark_62388d40b088061694cdc19601112625_305173149124624385.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    
+    <div class="container">
+        <div class="float-container">
+            <h1>AI Whale</h1>
+            <div class="whale-image-container">
+                <div class="whale-image-glow"></div>
+                <img src="C:/Users/Administrator/Desktop/253/images/photo_2024-10-20_21-10-50.jpg" alt="AI Whale" id="whaleImage" class="whale-image" onclick="toggleDialogAndPlaySound()">
+            </div>
+            <div class="rectangle-box">
+                ca
+            </div>
+        </div>
+    </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDialog()">&times;</span>
+            <div id="chatContent"></div>
+            <div class="chat-input">
+                <input type="text" id="userInput" placeholder="Enter your question...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="showcase-section">
+        <!-- 添加分隔线 -->
+        <div class="section-divider"></div>
+
+        <!-- 横向窗口作为标题 -->
+        <div class="horizontal-window">
+            <video autoplay loop muted playsinline class="ai-whale-video">
+                <source src="C:/Users/Administrator/Desktop/253/1729615235217075818-video_watermark_62388d40b088061694cdc19601112625_305173149124624385.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="description">
+                <h3>AI Whale: A New Wave of Currency for the Digital Ocean</h3>
+                <p>In the rapidly evolving landscape of technology, "Ai Whale" emerges as a revolutionary project designed to bridge the gap between artificial intelligence, blockchain, and sustainable finance.</p>
+            </div>
+        </div>
+
+        <!-- 添加分隔线 -->
+        <div class="section-divider"></div>
+
+        <!-- 第一行3个窗口 -->
+        <div class="showcase-row">
+            <div class="showcase-window">
+                <img src="C:/Users/Administrator/Desktop/253/images/5b794776358be0b54f2c8f9e078db07.png" alt="Develop a Robust and Scalable Technology Infrastructure">
+                <div class="description">
+                    <h3>Develop a Robust and Scalable Technology Infrastructure</h3>
+                    <p>• Blockchain and AI Integration: Ensure seamless integration between AI algorithms and blockchain technology to create a user-friendly platform that allows for secure, fast, and transparent transactions.<br>
+                    • Focus on Security: Implement advanced cryptographic and security protocols to protect the integrity of the system. Regular audits, bug bounties, and partnerships with cybersecurity firms will enhance trust in the platform.<br>
+                    • Scalability and Efficiency: Adopt a high-performance consensus mechanism (e.g., Proof of Stake or Delegated Proof of Stake) that ensures low transaction fees, fast processing times, and low energy consumption, aligning with the project's sustainability goals.</p>
+                </div>
+            </div>
+            <div class="showcase-window">
+                <img src="C:/Users/Administrator/Desktop/253/images/19337a3f21e6a60b6266f81165f57fe.jpg" alt="Develop a Strong and Engaged Community">
+                <div class="description">
+                    <h3>Develop a Strong and Engaged Community</h3>
+                    <p>• Early Adoption Incentives: Launch airdrop campaigns, staking rewards, and referral bonuses to incentivize early adopters and build a strong user base. Offering token rewards for users who help promote the platform can also help grow the community.<br>
+                    • Educate the Community: Create educational content around how to use Ai Whale's currency, how decentralized finance (DeFi) works, and the long-term vision of the project. Hosting webinars, creating tutorials, and having active social media channels will keep the community informed and engaged.<br>
+                    • Establish Governance Mechanisms: Empower users to have a say in the development and direction of the project by implementing a decentralized governance model, such as a DAO (Decentralized Autonomous Organization). This encourages participation and loyalty from the community.</p>
+                </div>
+            </div>
+            <div class="showcase-window">
+                <img src="C:/Users/Administrator/Desktop/253/images/c9a209cc0953807696829045c18c485.jpg" alt="Build Strategic Partnerships">
+                <div class="description">
+                    <h3>Build Strategic Partnerships</h3>
+                    <p>• Partnerships with DeFi Platforms: Forge alliances with established decentralized finance (DeFi) platforms and blockchain projects that can integrate Ai Whale's currency into their ecosystems. These partnerships can provide liquidity, increase use cases, and expand reach.<br>
+                    • Collaborate with Exchanges: List the Ai Whale currency on multiple reputable cryptocurrency exchanges to ensure liquidity and access to a broader user base. Prioritize listing on both centralized (CEX) and decentralized exchanges (DEX).<br>
+                    • Collaborate with Environmental Organizations: Given Ai Whale's sustainability focus, partnering with environmental NGOs or carbon offset organizations can bolster the brand's commitment to eco-friendly practices, while creating a positive public image.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二行3个窗口 -->
+        <div class="showcase-row">
+            <div class="showcase-window">
+                <img src="C:/Users/Administrator/Desktop/253/images/fd3257ea01c3830c64e09b54c43325e.png" alt="Marketing and Brand Positioning">
+                <div class="description">
+                    <h3>Marketing and Brand Positioning</h3>
+                    <p>• Build a Strong Brand Identity: Develop a clear, compelling brand that resonates with both tech-savvy users and environmentally conscious individuals. The branding should reflect the innovative, sustainable, and community-driven ethos of the Ai Whale project.<br>
+                    • Leverage Influencers and Thought Leaders: Engage with influencers and thought leaders in the cryptocurrency and AI spaces to endorse and promote the project. This will lend credibility and reach to wider audiences.<br>
+                    • Content Marketing and PR: Publish thought leadership articles, blogs, and white papers that demonstrate the unique aspects of the project, such as its AI-driven efficiency and environmental benefits. Regular PR releases can keep the project in the media spotlight.</p>
+                </div>
+            </div>
+            <div class="showcase-window">
+                <img src="C:/Users/Administrator/Desktop/253/images/48f0ad44120a05e66f8ffe00bb752fb.png" alt="Regulatory Compliance and Legal Framework">
+                <div class="description">
+                    <h3>Regulatory Compliance and Legal Framework</h3>
+                    <p>• Adhere to Local and International Regulations: Ensure that the Ai Whale currency complies with cryptocurrency regulations in key markets, including Know Your Customer (KYC) and Anti-Money Laundering (AML) policies. Work with legal experts to navigate the evolving regulatory landscape.<br>
+                    • Seek Licenses Where Necessary: In certain jurisdictions, seek licensing to ensure that the currency and its associated financial products can be legally offered to users. Having a solid legal framework will reduce risks and build investor confidence.</p>
+                </div>
+            </div>
+            <div class="showcase-window">
+                <img src="C:/Users/Administrator/Desktop/253/images/20b74dfc33ed147408621389440b36c.png" alt="User Experience and Accessibility">
+                <div class="description">
+                    <h3>User Experience and Accessibility</h3>
+                    <p>• User-Friendly Interface: Ensure that the Ai Whale platform is intuitive and easy to use for both seasoned crypto users and newcomers. Offering a smooth user experience is essential for driving adoption.<br>
+                    • Mobile Accessibility: Develop a mobile app that allows users to interact with the platform on the go. Mobile compatibility is essential for mass adoption, especially in regions where mobile devices are the primary means of accessing the internet.<br>
+                    • Customer Support and Education: Provide excellent customer support through multiple channels (live chat, email, social media) to address user questions and technical issues. Additionally, create clear documentation and support materials to guide users through onboarding.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最后一个窗口 -->
+        <div class="showcase-row">
+            <div class="showcase-window" style="width: 100%; max-width: none;">
+                <img src="C:/Users/Administrator/Desktop/253/images/your_image_here.jpg" alt="Future Vision">
+                <div class="description">
+                    <h3>Future Vision</h3>
+                    <p>As Ai Whale continues to evolve, our vision extends beyond just creating a cryptocurrency. We aim to establish a comprehensive ecosystem that leverages AI and blockchain technology to revolutionize various sectors, from finance to environmental conservation. Our long-term goals include:<br><br>
+                    • Expanding into AI-driven predictive analytics for sustainable investments<br>
+                    • Developing blockchain solutions for transparent carbon credit trading<br>
+                    • Creating a decentralized marketplace for AI algorithms and data sets<br>
+                    • Fostering a global community of developers, environmentalists, and investors united by the vision of technology-driven sustainability<br><br>
+                    Join us in shaping a future where artificial intelligence and blockchain technology work hand in hand to create a more sustainable and equitable world.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 在 <body> 标签内,添加以下音频元素 -->
+    <audio id="whaleSound">
+        <source src="C:\Users\Administrator\Desktop\253\images\未知歌手 - 鲸鱼的叫声.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <!-- 在 <body> 标签内,添加以下音频元素 -->
+    <audio id="backgroundMusic" loop>
+        <source src="C:\Users\Administrator\Desktop\253\images\剪辑20241021_2325.MP3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.5.1/jsrsasign-all-min.js"></script>
+    <script>
+        function toggleDialog() {
+            const modal = document.getElementById('myModal');
+            if (modal.style.display === 'flex') {
+                closeDialog();
+            } else {
+                showDialog();
+            }
+        }
+
+        function showDialog() {
+            document.getElementById('myModal').style.display = 'flex';
+        }
+
+        function closeDialog() {
+            document.getElementById('myModal').style.display = 'none';
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const chatContent = document.getElementById('chatContent');
+            const message = userInput.value.trim();
+            if (message) {
+                const userMessage = document.createElement('div');
+                userMessage.className = 'message user-message';
+                userMessage.innerHTML = `
+                    <div class="message-content">${message}</div>
+                `;
+                chatContent.appendChild(userMessage);
+
+                userInput.value = '';
+
+                try {
+                    let aiResponse;
+                    if (chatContent.children.length === 1) {
+                        // This is the first message, use the new self-introduction
+                        aiResponse = "I am AI Whale. Are you ready to explore the ocean of knowledge with me?";
+                    } else {
+                        aiResponse = await callZhipuAI(message);
+                    }
+                    const aiMessage = document.createElement('div');
+                    aiMessage.className = 'message ai-message';
+                    aiMessage.innerHTML = `
+                        <img src="C:/Users/Administrator/Desktop/253/images/photo_2024-10-20_21-10-50.jpg" alt="AI" class="message-avatar">
+                        <div class="message-content">${aiResponse}</div>
+                    `;
+                    chatContent.appendChild(aiMessage);
+                } catch (error) {
+                    console.error('Error calling Zhipu AI:', error);
+                    const errorMessage = document.createElement('div');
+                    errorMessage.className = 'message ai-message error';
+                    errorMessage.innerHTML = `
+                        <img src="C:/Users/Administrator/Desktop/253/images/photo_2024-10-20_21-10-50.jpg" alt="AI" class="message-avatar">
+                        <div class="message-content">Error: Unable to get AI response. Details: ${error.message}</div>
+                    `;
+                    chatContent.appendChild(errorMessage);
+                } finally {
+                    chatContent.scrollTop = chatContent.scrollHeight;
+                }
+            }
+        }
+
+        async function callZhipuAI(message) {
+            const apiKey = 'e603d9ace07dd1c1ab17ee0a48c71c97.ftvAhc2jL2FTS9yc'; // 更新为新的API Key
+            const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+
+            try {
+                const token = generateToken(apiKey);
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "glm-4",
+                        messages: [
+                            {
+                                role: "user",
+                                content: message
+                            }
+                        ]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                    throw new Error('Invalid response format from AI');
+                }
+                return data.choices[0].message.content;
+            } catch (error) {
+                console.error('Error in callZhipuAI:', error);
+                throw error;
+            }
+        }
+
+        function generateToken(apiKey) {
+            const [id, secret] = apiKey.split('.');
+            const now = Math.floor(Date.now() / 1000);
+            const exp = now + 60; // Token有效期60秒
+
+            const header = {
+                alg: 'HS256',
+                sign_type: 'SIGN'
+            };
+
+            const payload = {
+                api_key: id,
+                exp: exp * 1000,
+                timestamp: now * 1000
+            };
+
+            const token = KJUR.jws.JWS.sign(
+                "HS256",
+                JSON.stringify(header),
+                JSON.stringify(payload),
+                secret
+            );
+
+            return token;
+        }
+
+        document.getElementById('userInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function toggleDialogAndPlaySound() {
+            toggleDialog();
+            playWhaleSound();
+        }
+
+        function playWhaleSound() {
+            const whaleSound = document.getElementById('whaleSound');
+            whaleSound.play();
+        }
+
+        function createBubble() {
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            const size = Math.random() * 50 + 20; // 20px to 70px
+            bubble.style.width = `${size}px`;
+            bubble.style.height = `${size}px`;
+            bubble.style.left = `${Math.random() * 100}vw`;
+            bubble.style.animation = `rise ${Math.random() * 10 + 5}s linear infinite`;
+            
+            bubble.addEventListener('dblclick', function() {
+                this.style.animation = 'pop 0.3s ease-out forwards';
+                setTimeout(() => this.remove(), 300);
+            });
+
+            document.body.appendChild(bubble);
+        }
+
+        // 修改这里：将创建气泡的间隔从1秒增加到3秒
+        setInterval(createBubble, 3000);
+
+        // 修改这里：减少初始创建的气泡数量从10个减少到5个
+        for (let i = 0; i < 5; i++) {
+            setTimeout(createBubble, i * 500);
+        }
+
+        let backgroundMusicPlaying = false;
+
+        function toggleBackgroundMusic() {
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            const musicToggle = document.getElementById('musicToggle');
+            if (backgroundMusicPlaying) {
+                backgroundMusic.pause();
+                musicToggle.textContent = '🔇';
+                backgroundMusicPlaying = false;
+            } else {
+                backgroundMusic.play().then(() => {
+                    musicToggle.textContent = '🔊';
+                    backgroundMusicPlaying = true;
+                }).catch(error => {
+                    console.error('Error playing background music:', error);
+                });
+            }
+        }
+
+        // 修改这个函数
+        function tryPlayBackgroundMusic(event) {
+            // 检查点击的元素是否是顶部按钮之一
+            if (!event.target.closest('.top-right-button')) {
+                if (!backgroundMusicPlaying) {
+                    toggleBackgroundMusic();
+                }
+                // 移除事件监听器，因为我们只需要尝试一次
+                document.removeEventListener('click', tryPlayBackgroundMusic);
+            }
+        }
+
+        // 添加事件监听器，在用户第一次点击页面时尝试播放音乐
+        document.addEventListener('click', tryPlayBackgroundMusic);
+    </script>
+</body>
+</html>
